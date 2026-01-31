@@ -4,14 +4,14 @@ const int LED_PIN = 13;
 // How often to sample the mic (ms)
 const unsigned long sampleIntervalMs = 5;   // 200 Hz sampling
 // How often to print values (ms)
-const unsigned long printIntervalMs  = 200; // 5 prints/sec
+const unsigned long printIntervalMs  = 1000; // 5 prints/sec
 
 // Baseline tracking (simple low-pass filter)
 float baseline = 512.0f;       // start near mid-scale
-const float baselineAlpha = 0.02f; // smaller = slower baseline adaptation
+const float baselineAlpha = 0.01f; // smaller = slower baseline adaptation
 
 // Clap detection
-int clapThreshold = 60;              // deviation threshold (tune this!)
+int clapThreshold = 30;              // deviation threshold (tune this!)
 const unsigned long clapLockoutMs = 300;
 
 bool ledState = false;
@@ -41,14 +41,19 @@ void loop() {
     baseline = (1.0f - baselineAlpha) * baseline + baselineAlpha * raw;
 
     // "Sound level": how far raw is from baseline
-    int deviation = abs(raw - (int)baseline);
+    int deviation = raw - (int)baseline;
 
     // Clap detection with lockout
     if (deviation >= clapThreshold && (now - lastClapMs) >= clapLockoutMs) {
       lastClapMs = now;
       ledState = !ledState;
       digitalWrite(LED_PIN, ledState);
-      Serial.println("CLAP!");
+      Serial.print("CLAP! raw=");
+      Serial.print(raw);
+      Serial.print(" baseline=");
+      Serial.print((int)baseline);
+      Serial.print(" deviation=");
+      Serial.println(deviation);
     }
 
     // Periodic printing (doesn't spam the serial port)
